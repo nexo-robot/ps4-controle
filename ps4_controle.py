@@ -29,7 +29,7 @@ MAP_AXES = {
     5: "R2"
 }
 
-class PS4Controller:
+class ps4_controle:
     def __init__(self, joystick_id=0, deadzone=0.1):
         if "SDL_VIDEODRIVER" not in os.environ:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
@@ -41,48 +41,46 @@ class PS4Controller:
         if not pygame.joystick.get_init():
             pygame.joystick.init()
 
-        self.joystick = None
-        self.id = joystick_id
-        self.deadzone = deadzone
+        self.__joystick = None
+        self.__id = joystick_id
+        self.__deadzone = deadzone
 
         # États actuels (C'est ici qu'on lit les valeurs pour le robot)
-        self.buttons = {name: False for name in MAP_BUTTONS.values()}
-        self.axes = {name: 0.0 for name in MAP_AXES.values()}
-        self.hats = (0, 0)
-        
-        # Liste pour stocker les événements de boutons (Commandes ponctuelles)
-        self.events = []
+        self.__buttons = {name: False for name in MAP_BUTTONS.values()}
+        self.__axes = {name: 0.0 for name in MAP_AXES.values()}
+        self.__hats = (0, 0)
 
-        self._initialize_joystick()
+        self.__events = []
 
-    def _initialize_joystick(self):
+        self.__initialize_joystick()
+
+    def __initialize_joystick(self):
         pygame.event.pump() # Rafraîchir l'état interne de pygame
-        if pygame.joystick.get_count() > self.id:
-            self.joystick = pygame.joystick.Joystick(self.id)
+        if pygame.joystick.get_count() > self.__id:
+            self.__joystick = pygame.joystick.Joystick(self.__id)
         else:
             pass
 
-    def handle_event(self, event):
+    def __handle_event(self, event):
         # Gestion de la connexion à chaud
         if event.type == pygame.JOYDEVICEADDED:
-            if self.joystick is None:
-                self._initialize_joystick()
+            if self.__joystick is None:
+                self.__initialize_joystick()
             return
 
         # Vérifie si l'événement appartient à cette manette
-        if not self.joystick or (hasattr(event, 'joy') and event.joy != self.joystick.get_id()):
+        if not self.__joystick or (hasattr(event, 'joy') and event.joy != self.__joystick.get_id()):
             return
 
         # --- Boutons ---
         if event.type == pygame.JOYBUTTONDOWN:
             name = MAP_BUTTONS.get(event.button, f"BTN_{event.button}")
-            self.buttons[name] = True
-            self._on_button_down(name)
+            self.__buttons[name] = True
+            self.__events.append(name)
 
         elif event.type == pygame.JOYBUTTONUP:
             name = MAP_BUTTONS.get(event.button, f"BTN_{event.button}")
-            self.buttons[name] = False
-            self._on_button_up(name)
+            self.__buttons[name] = False
 
         # --- Axes ---
         elif event.type == pygame.JOYAXISMOTION:
@@ -91,39 +89,39 @@ class PS4Controller:
                 val = event.value
                 # Zone morte pour les sticks
                 if "LEFT" in name or "RIGHT" in name:
-                    if abs(val) < self.deadzone:
+                    if abs(val) < self.__deadzone:
                         val = 0.0
-                self.axes[name] = val
-                self._on_axis_motion(name, val)
+                self.__axes[name] = val
 
         # --- Croix directionnelle ---
         elif event.type == pygame.JOYHATMOTION:
-            self.hats = event.value
-            self._on_hat_motion(event.value)
+            self.__hats = event.value
+            self.__on_hat_motion(event.value)
 
         # --- Déconnexion ---
         elif event.type == pygame.JOYDEVICEREMOVED:
-            if self.joystick and event.instance_id == self.joystick.get_instance_id():
-                self.joystick = None
+            if self.__joystick and event.instance_id == self.__joystick.get_instance_id():
+                self.__joystick = None
 
-    def _on_button_down(self, button_name):
-        # On ajoute l'événement bouton car c'est une action ponctuelle
-        self.events.append(button_name)
-
-    def _on_button_up(self, button_name):
-        pass
-
-    def _on_axis_motion(self, axis_name, value):
-        # Pour un robot, on ne stocke pas l'historique des mouvements de joystick.
-        # On se contente de mettre à jour self.axes (déjà fait plus haut).
-        pass
-
-    def _on_hat_motion(self, value):
-        self.events.append(("HAT", value))
+    def __on_hat_motion(self, value):
+        self.__events.append(("HAT", value))
 
     def update(self):
-        """
-        Méthode utilitaire pour traiter tous les événements en attente d'un coup.
-        """
+
         for event in pygame.event.get():
-            self.handle_event(event)
+            self.__handle_event(event)
+
+    def getEvent(self):
+        return self.__events
+
+    def clearEvent(self):
+        self.__events.clear()
+
+    def getAxes(self):
+        return self.__axes
+
+    def getButtons(self):
+        return self.__buttons
+
+    def getHats(self):
+        return self.__hats
