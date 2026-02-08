@@ -18,6 +18,11 @@ if __name__ == "__main__":
             left_y = controller.getAxes()["LEFT_Y"]
             right_x = controller.getAxes()["RIGHT_X"]
 
+            l2 = controller.getAxes()["L2"]
+            r2 = controller.getAxes()["R2"]
+
+
+
             if abs(left_y) > 0.1 or abs(right_x) > 0.1:
                 print(f"Pilotage -> Avance: {left_y:.2f} | Tourne: {right_x:.2f}")
 
