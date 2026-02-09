@@ -31,7 +31,7 @@ DEFAULT_MAP_AXES = {
 }
 
 class ps4_controle:
-    def __init__(self, joystick_id=0, deadzone=0.1, mapping_file="mapping.json"):
+    def __init__(self, joystick_id=0, deadzone=0.1, mapping_file="mapping_fedora.json"):
         if "SDL_VIDEODRIVER" not in os.environ:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
 
