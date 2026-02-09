@@ -1,7 +1,8 @@
 import pygame
 import os
+import json
 
-MAP_BUTTONS = {
+DEFAULT_MAP_BUTTONS = {
     0: "CROSS",
     1: "CIRCLE",
     2: "SQUARE",
@@ -20,7 +21,7 @@ MAP_BUTTONS = {
     15: "TOUCHPAD"
 }
 
-MAP_AXES = {
+DEFAULT_MAP_AXES = {
     0: "LEFT_X",
     1: "LEFT_Y",
     2: "RIGHT_X",
@@ -30,7 +31,7 @@ MAP_AXES = {
 }
 
 class ps4_controle:
-    def __init__(self, joystick_id=0, deadzone=0.1):
+    def __init__(self, joystick_id=0, deadzone=0.1, mapping_file="mapping.json"):
         if "SDL_VIDEODRIVER" not in os.environ:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
 
@@ -45,14 +46,33 @@ class ps4_controle:
         self.__id = joystick_id
         self.__deadzone = deadzone
 
+        self.MAP_BUTTONS = DEFAULT_MAP_BUTTONS.copy()
+        self.MAP_AXES = DEFAULT_MAP_AXES.copy()
+        self.__load_mapping(mapping_file)
+
         # États actuels (C'est ici qu'on lit les valeurs pour le robot)
-        self.__buttons = {name: False for name in MAP_BUTTONS.values()}
-        self.__axes = {name: 0.0 for name in MAP_AXES.values()}
+        self.__buttons = {name: False for name in self.MAP_BUTTONS.values()}
+        self.__axes = {name: 0.0 for name in self.MAP_AXES.values()}
         self.__hats = (0, 0)
 
         self.__events = []
 
         self.__initialize_joystick()
+
+    def __load_mapping(self, mapping_file):
+        if os.path.exists(mapping_file):
+            try:
+                with open(mapping_file, 'r') as f:
+                    data = json.load(f)
+                    if "buttons" in data:
+                        self.MAP_BUTTONS = {int(k): v for k, v in data["buttons"].items()}
+                    if "axes" in data:
+                        self.MAP_AXES = {int(k): v for k, v in data["axes"].items()}
+                print(f"Mapping chargé depuis {mapping_file}")
+            except Exception as e:
+                print(f"Erreur lors du chargement du mapping : {e}")
+        else:
+            print(f"Fichier de mapping {mapping_file} non trouvé, utilisation des valeurs par défaut.")
 
     def __initialize_joystick(self):
         pygame.event.pump() # Rafraîchir l'état interne de pygame
@@ -74,17 +94,17 @@ class ps4_controle:
 
         # --- Boutons ---
         if event.type == pygame.JOYBUTTONDOWN:
-            name = MAP_BUTTONS.get(event.button, f"BTN_{event.button}")
+            name = self.MAP_BUTTONS.get(event.button, f"BTN_{event.button}")
             self.__buttons[name] = True
             self.__events.append(name)
 
         elif event.type == pygame.JOYBUTTONUP:
-            name = MAP_BUTTONS.get(event.button, f"BTN_{event.button}")
+            name = self.MAP_BUTTONS.get(event.button, f"BTN_{event.button}")
             self.__buttons[name] = False
 
         # --- Axes ---
         elif event.type == pygame.JOYAXISMOTION:
-            name = MAP_AXES.get(event.axis)
+            name = self.MAP_AXES.get(event.axis)
             if name:
                 val = event.value
                 # Zone morte pour les sticks
