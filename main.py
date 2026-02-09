@@ -1,7 +1,7 @@
 from ps4_controle import *
 
 if __name__ == "__main__":
-    controller = ps4_controle()
+    controller = ps4_controle(mapping_file="mapping/mapping_raspi.json")
 
     clock = pygame.time.Clock()
     print("\n--- Écoute des événements (Ctrl+C pour quitter) ---")
